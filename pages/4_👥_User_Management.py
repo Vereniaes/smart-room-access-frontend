@@ -91,6 +91,7 @@ with col_list:
             valid = user.get("valid_until") or "∞"
 
             col_info, col_edit, col_del = st.columns([4, 1, 1])
+            username_part = f" · @{user.get('username')}" if user.get('username') else ""
             with col_info:
                 st.markdown(f"""
                 <div class="user-card">
@@ -98,8 +99,7 @@ with col_list:
                     <div style="flex:1;min-width:0">
                         <div style="font-weight:600;color:#e2e8f0">{user.get('name')}</div>
                         <div style="font-size:0.75rem;color:#64748b;margin-top:2px">
-                            🕐 {schedule} · 📅 s/d {valid}
-                            {' · @' + user.get('username') if user.get('username') else ''}
+                            🕐 {schedule} · 📅 s/d {valid}{username_part}
                         </div>
                     </div>
                     <span class="role-badge {role_class}">{role}</span>

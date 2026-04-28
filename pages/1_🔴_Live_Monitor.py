@@ -130,105 +130,103 @@ with col_logout:
         st.session_state.clear()
         st.switch_page("app.py")
 
-# ── Data ──────────────────────────────────────────────────────────────────────
-logs = get_logs()
-now_wib = datetime.now(WIB)
+@st.fragment(run_every=interval if auto_refresh else None)
+def render_live_dashboard():
+    logs = get_logs()
+    now_wib = datetime.now(WIB)
 
-def parse_wib(ts_str):
-    try:
-        dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-        return dt.astimezone(WIB)
-    except Exception:
-        return None
+    def parse_wib(ts_str):
+        try:
+            dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+            return dt.astimezone(WIB)
+        except Exception:
+            return None
 
-# Sort by access_time desc
-logs_sorted = sorted(logs, key=lambda x: x.get("access_time", ""), reverse=True)
-latest = logs_sorted[0] if logs_sorted else None
-recent_10 = logs_sorted[:10]
+    # Sort by access_time desc
+    logs_sorted = sorted(logs, key=lambda x: x.get("access_time", ""), reverse=True)
+    latest = logs_sorted[0] if logs_sorted else None
+    recent_10 = logs_sorted[:10]
 
-# ── Main layout ───────────────────────────────────────────────────────────────
-col_left, col_right = st.columns([1.2, 1.8])
+    # ── Main layout ───────────────────────────────────────────────────────────────
+    col_left, col_right = st.columns([1.2, 1.8])
 
-with col_left:
-    # Clock
-    st.markdown(f'<div class="clock-display">{now_wib.strftime("%H:%M:%S")}<br><span style="font-size:0.8rem;color:#475569">{now_wib.strftime("%A, %d %B %Y")} WIB</span></div>', unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+    with col_left:
+        # Clock
+        st.markdown(f'<div class="clock-display">{now_wib.strftime("%H:%M:%S")}<br><span style="font-size:0.8rem;color:#475569">{now_wib.strftime("%A, %d %B %Y")} WIB</span></div>', unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
 
-    # Latest event card
-    if latest:
-        is_granted = latest.get("status") == "allowed"
-        card_class = "status-granted" if is_granted else "status-denied"
-        icon = "✅" if is_granted else "❌"
-        label = "ACCESS GRANTED" if is_granted else "ACCESS DENIED"
-        name = latest.get("user_name") or latest.get("name") or "Unknown"
-        uid = latest.get("uid", "—")
-        ts = parse_wib(latest.get("access_time", ""))
-        ts_str = ts.strftime("%H:%M:%S") if ts else "—"
-        msg = latest.get("message", "")
-
-        st.markdown(f"""
-        <div class="status-card {card_class}">
-            <div class="status-icon">{icon}</div>
-            <div class="status-label">{label}</div>
-            <div class="status-name">{name}</div>
-            <div class="status-time">UID: {uid}</div>
-            <div class="status-time">{ts_str} WIB</div>
-            <div class="status-time" style="color:#6b7280;margin-top:0.5rem;font-size:0.75rem">{msg}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Foto jika ada
-        photo_url = latest.get("photo_url")
-        if photo_url:
-            st.image(photo_url, caption="📸 Foto Akses Terakhir", use_container_width=True)
-    else:
-        st.info("Belum ada data akses.")
-
-    # Mini metrics
-    today_str = now_wib.strftime("%Y-%m-%d")
-    today_logs = [l for l in logs if l.get("access_time", "").startswith(today_str[:10]) or 
-                  (parse_wib(l.get("access_time", "")) and parse_wib(l.get("access_time","")).strftime("%Y-%m-%d") == today_str)]
-    allowed_today = sum(1 for l in today_logs if l.get("status") == "allowed")
-    denied_today = sum(1 for l in today_logs if l.get("status") == "denied")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    mc1, mc2, mc3 = st.columns(3)
-    with mc1:
-        st.markdown(f'<div class="metric-mini"><div class="metric-mini-val" style="color:#22c55e">{allowed_today}</div><div class="metric-mini-label">Granted</div></div>', unsafe_allow_html=True)
-    with mc2:
-        st.markdown(f'<div class="metric-mini"><div class="metric-mini-val" style="color:#ef4444">{denied_today}</div><div class="metric-mini-label">Denied</div></div>', unsafe_allow_html=True)
-    with mc3:
-        st.markdown(f'<div class="metric-mini"><div class="metric-mini-val">{len(today_logs)}</div><div class="metric-mini-label">Total</div></div>', unsafe_allow_html=True)
-
-with col_right:
-    st.markdown("#### 📋 Recent Access Events")
-    if recent_10:
-        for log in recent_10:
-            is_ok = log.get("status") == "allowed"
-            dot_class = "event-dot-granted" if is_ok else "event-dot-denied"
-            badge_class = "badge-granted" if is_ok else "badge-denied"
-            badge_txt = "GRANTED" if is_ok else "DENIED"
-            name = log.get("user_name") or log.get("name") or "Unknown"
-            uid = log.get("uid", "—")
-            ts = parse_wib(log.get("access_time", ""))
-            ts_str = ts.strftime("%H:%M") if ts else "—"
-            room = log.get("room", "—")
+        # Latest event card
+        if latest:
+            is_granted = latest.get("status") == "allowed"
+            card_class = "status-granted" if is_granted else "status-denied"
+            icon = "✅" if is_granted else "❌"
+            label = "ACCESS GRANTED" if is_granted else "ACCESS DENIED"
+            name = latest.get("user_name") or latest.get("name") or "Unknown"
+            uid = latest.get("uid", "—")
+            ts = parse_wib(latest.get("access_time", ""))
+            ts_str = ts.strftime("%H:%M:%S") if ts else "—"
+            msg = latest.get("message", "")
 
             st.markdown(f"""
-            <div class="event-card">
-                <div class="event-dot {dot_class}"></div>
-                <div style="flex:1;min-width:0">
-                    <div class="event-name">{name}</div>
-                    <div class="event-uid">{uid} · {room}</div>
-                </div>
-                <div class="event-status-badge {badge_class}">{badge_txt}</div>
-                <div class="event-time">{ts_str}</div>
+            <div class="status-card {card_class}">
+                <div class="status-icon">{icon}</div>
+                <div class="status-label">{label}</div>
+                <div class="status-name">{name}</div>
+                <div class="status-time">UID: {uid}</div>
+                <div class="status-time">{ts_str} WIB</div>
+                <div class="status-time" style="color:#6b7280;margin-top:0.5rem;font-size:0.75rem">{msg}</div>
             </div>
             """, unsafe_allow_html=True)
-    else:
-        st.markdown('<div style="color:#475569;text-align:center;padding:2rem">Belum ada event hari ini</div>', unsafe_allow_html=True)
 
-# ── Auto-refresh ──────────────────────────────────────────────────────────────
-if auto_refresh:
-    time.sleep(interval)
-    st.rerun()
+            # Foto jika ada
+            photo_url = latest.get("photo_url")
+            if photo_url:
+                st.image(photo_url, caption="📸 Foto Akses Terakhir", use_container_width=True)
+        else:
+            st.info("Belum ada data akses.")
+
+        # Mini metrics
+        today_str = now_wib.strftime("%Y-%m-%d")
+        today_logs = [l for l in logs if l.get("access_time", "").startswith(today_str[:10]) or 
+                      (parse_wib(l.get("access_time", "")) and parse_wib(l.get("access_time","")).strftime("%Y-%m-%d") == today_str)]
+        allowed_today = sum(1 for l in today_logs if l.get("status") == "allowed")
+        denied_today = sum(1 for l in today_logs if l.get("status") == "denied")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        mc1, mc2, mc3 = st.columns(3)
+        with mc1:
+            st.markdown(f'<div class="metric-mini"><div class="metric-mini-val" style="color:#22c55e">{allowed_today}</div><div class="metric-mini-label">Granted</div></div>', unsafe_allow_html=True)
+        with mc2:
+            st.markdown(f'<div class="metric-mini"><div class="metric-mini-val" style="color:#ef4444">{denied_today}</div><div class="metric-mini-label">Denied</div></div>', unsafe_allow_html=True)
+        with mc3:
+            st.markdown(f'<div class="metric-mini"><div class="metric-mini-val">{len(today_logs)}</div><div class="metric-mini-label">Total</div></div>', unsafe_allow_html=True)
+
+    with col_right:
+        st.markdown("#### 📋 Recent Access Events")
+        if recent_10:
+            for log in recent_10:
+                is_ok = log.get("status") == "allowed"
+                dot_class = "event-dot-granted" if is_ok else "event-dot-denied"
+                badge_class = "badge-granted" if is_ok else "badge-denied"
+                badge_txt = "GRANTED" if is_ok else "DENIED"
+                name = log.get("user_name") or log.get("name") or "Unknown"
+                uid = log.get("uid", "—")
+                ts = parse_wib(log.get("access_time", ""))
+                ts_str = ts.strftime("%H:%M") if ts else "—"
+                room = log.get("room", "—")
+
+                st.markdown(f"""
+                <div class="event-card">
+                    <div class="event-dot {dot_class}"></div>
+                    <div style="flex:1;min-width:0">
+                        <div class="event-name">{name}</div>
+                        <div class="event-uid">{uid} · {room}</div>
+                    </div>
+                    <div class="event-status-badge {badge_class}">{badge_txt}</div>
+                    <div class="event-time">{ts_str}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.markdown('<div style="color:#475569;text-align:center;padding:2rem">Belum ada event hari ini</div>', unsafe_allow_html=True)
+
+render_live_dashboard()
