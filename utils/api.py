@@ -41,7 +41,10 @@ def get_logs():
     try:
         resp = requests.get(f"{BASE_URL}/logs", headers=_headers(), timeout=10)
         if resp.status_code == 200:
-            return resp.json().get("data", [])
+            data = resp.json().get("data", {})
+            if isinstance(data, list):
+                return data
+            return data.get("logs", [])
         if resp.status_code in (401, 403):
             st.session_state.token = None
         return []
@@ -55,7 +58,10 @@ def get_users():
     try:
         resp = requests.get(f"{BASE_URL}/users", headers=_headers(), timeout=10)
         if resp.status_code == 200:
-            return resp.json().get("data", [])
+            data = resp.json().get("data", {})
+            if isinstance(data, list):
+                return data
+            return data.get("users", [])
         return []
     except Exception:
         return []
