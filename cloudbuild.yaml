@@ -7,21 +7,21 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/smart-room-access-frontend:$COMMIT_SHA'
+      - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/security-dashboard:$COMMIT_SHA'
       - '-t'
-      - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/smart-room-access-frontend:latest'
+      - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/security-dashboard:latest'
       - '.'
 
   # Push image ke Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/smart-room-access-frontend:$COMMIT_SHA'
+      - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/security-dashboard:$COMMIT_SHA'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/smart-room-access-frontend:latest'
+      - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/security-dashboard:latest'
 
   # Deploy ke Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -29,8 +29,8 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'smart-room-access-frontend'
-      - '--image=asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/smart-room-access-frontend:$COMMIT_SHA'
+      - 'security-dashboard'
+      - '--image=asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/security-dashboard:$COMMIT_SHA'
       - '--region=asia-southeast2'
       - '--platform=managed'
       - '--allow-unauthenticated'
@@ -42,8 +42,8 @@ steps:
       - '--timeout=300'
 
 images:
-  - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/smart-room-access-frontend:$COMMIT_SHA'
-  - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/smart-room-access-frontend:latest'
+  - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/security-dashboard:$COMMIT_SHA'
+  - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/security-dashboard:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
