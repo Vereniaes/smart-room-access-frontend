@@ -288,15 +288,8 @@ export default function Home() {
             </button>
           </form>
 
-          {/* Quick Helper info */}
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <span className="text-slate-400 text-xs font-medium">Akun Demo Default:</span>
-            <div className="mt-2 inline-flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-              <span className="text-[10px] text-slate-500 font-mono">user: <b>admin</b></span>
-              <span className="text-slate-300">|</span>
-              <span className="text-[10px] text-slate-500 font-mono">pw: <b>admin123</b></span>
-            </div>
-          </div>
+          {/* Login form footer separator */}
+          <div className="mt-6 border-t border-slate-100"></div>
         </div>
       </div>
     );

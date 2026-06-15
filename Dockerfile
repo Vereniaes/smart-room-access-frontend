@@ -47,9 +47,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
-# Cloud Run inject PORT env var secara dinamis
-EXPOSE 3000
-ENV PORT=3000
+# Cloud Run secara default mengarahkan trafik ke port 8080
+EXPOSE 8080
+ENV PORT=8080
 ENV HOSTNAME="0.0.0.0"
 
 # Jalankan server.js bawaan Next.js standalone server
