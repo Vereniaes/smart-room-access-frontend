@@ -239,6 +239,7 @@ Komponen paling kompleks dalam aplikasi. Menampilkan tabel kartu RFID yang mengg
 - Preview 3 foto wajah biometrik dari API atau localStorage
 - Modal tambah kartu baru
 - Fungsi blokir/buka blokir kartu (set `valid_until = 1970-01-01`)
+- Pembaruan status realtime berkala mengikuti interval polling live serta dilengkapi tombol putar ulang manual (*refresh button*)
 
 ---
 

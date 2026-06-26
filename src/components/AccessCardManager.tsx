@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Search, ShieldCheck, ShieldAlert, CreditCard, User, Clock, Calendar, ArrowRight, X, Image as ImageIcon, Edit2, Key, Filter, ChevronDown, Plus, UserPlus, AlertCircle, ScanFace } from 'lucide-react';
+import { Search, ShieldCheck, ShieldAlert, CreditCard, User, Clock, Calendar, ArrowRight, X, Image as ImageIcon, Edit2, Key, Filter, ChevronDown, Plus, UserPlus, AlertCircle, ScanFace, RefreshCw } from 'lucide-react';
 
 interface UserData {
   id: number;
@@ -87,17 +87,20 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
       });
       const data = await res.json();
       if (data.success) {
-        const mapped: CardItem[] = data.data.cards.map((c: any) => ({
-          id: c.id,
-          uid: c.card_no, // Use card_no (plaintext) as uid
-          name: c.user_name || 'Tidak Dikenal',
-          role: c.user_role || 'TAMU',
-          status: c.user_id ? 'registered' : 'unregistered',
-          userId: c.user_id,
-          scheduleStart: c.user_schedule_start,
-          scheduleEnd: c.user_schedule_end,
-          validUntil: c.user_valid_until || c.valid_until
-        }));
+        const mapped: CardItem[] = data.data.cards.map((c: any) => {
+          const isBlocked = c.user_valid_until === '1970-01-01' || c.valid_until === '1970-01-01';
+          return {
+            id: c.id,
+            uid: c.card_no, // Use card_no (plaintext) as uid
+            name: c.user_name || 'Tidak Dikenal',
+            role: c.user_role || 'TAMU',
+            status: c.user_id ? 'registered' : 'unregistered',
+            userId: c.user_id,
+            scheduleStart: c.user_schedule_start,
+            scheduleEnd: c.user_schedule_end,
+            validUntil: isBlocked ? '1970-01-01' : (c.user_valid_until || c.valid_until)
+          };
+        });
         setApiCards(mapped);
       }
     } catch (err) {
@@ -109,7 +112,7 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
 
   useEffect(() => {
     fetchCards();
-  }, [token]);
+  }, [token, users]);
 
   // function untuk memproses pemblokiran kartu via API
   const handleBlockCard = async (cardId: number, block: boolean) => {
@@ -520,8 +523,23 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
               <h3 className="font-bold text-slate-800 tracking-tight text-base">Manajemen Kartu Akses</h3>
               <p className="text-slate-400 text-xs mt-0.5">Daftar kartu RFID terdaftar beserta status registrasi pengguna</p>
             </div>
-            <div className="text-slate-400">
-              <CreditCard size={16} />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  fetchCards();
+                  onRefresh();
+                }}
+                disabled={loadingCards}
+                className={`p-2 hover:bg-slate-50 text-slate-400 hover:text-emerald-600 rounded-xl transition-all ${
+                  loadingCards ? 'animate-spin text-emerald-600' : ''
+                }`}
+                title="Refresh Data Kartu"
+              >
+                <RefreshCw size={16} />
+              </button>
+              <div className="text-slate-400 p-2">
+                <CreditCard size={16} />
+              </div>
             </div>
           </div>
 
