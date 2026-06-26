@@ -1,11 +1,8 @@
-/**
- * smart-room-access-frontend/src/components/AccessCardManager.tsx
- *
- * -> component untuk manajemen kartu akses rfid
- * -> menampilkan tabel kartu terdaftar (users) dan kartu belum terdaftar (dari logs)
- * -> menyediakan drawer sidebar kanan detail info kartu, 3 foto wajah, & tombol link registrasi
- * -> menggunakan tema minimalist putih hijau (emerald green)
- */
+// smart-room-access-frontend/src/components/AccessCardManager.tsx
+//
+// -> component untuk manajemen kartu akses rfid
+//      -> menampilkan tabel kartu terdaftar dan belum terdaftar
+//      -> menyediakan drawer sidebar kanan detail info kartu dan foto wajah
 
 import React, { useState, useEffect } from 'react';
 import { Search, ShieldCheck, ShieldAlert, CreditCard, User, Clock, Calendar, ArrowRight, X, Image as ImageIcon, Edit2, Key, Filter, ChevronDown, Plus, UserPlus, AlertCircle, ScanFace, RefreshCw, Trash2 } from 'lucide-react';
@@ -402,23 +399,22 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
         if (resData.success && resData.data && resData.data.photos && resData.data.photos.length > 0) {
           setCardPhotos(resData.data.photos);
         } else {
-          // Fallback ke localStorage atau demo photos
+          // Fallback ke localStorage
           const stored = localStorage.getItem(`user_photos_${selectedCard.userId}`);
           if (stored) {
             setCardPhotos(JSON.parse(stored));
           } else {
-            setCardPhotos(['/face_demo_one.png', '/face_demo_two.png', '/face_demo_three.png']);
+            setCardPhotos([]);
           }
         }
       })
       .catch(err => {
-        console.warn('Fallback to local storage/demo images because API fetch failed:', err.message);
-        // Fallback
+        console.warn('Fallback to local storage because API fetch failed:', err.message);
         const stored = localStorage.getItem(`user_photos_${selectedCard.userId}`);
         if (stored) {
           setCardPhotos(JSON.parse(stored));
         } else {
-          setCardPhotos(['/face_demo_one.png', '/face_demo_two.png', '/face_demo_three.png']);
+          setCardPhotos([]);
         }
       })
       .finally(() => {
@@ -474,8 +470,7 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
     } catch (e) {
       console.error('Failed to parse stored user photos', e);
     }
-    // Fallback ke demo photos jika data tidak ditemukan (misal user dari seeder DB)
-    return ['/face_demo_one.png', '/face_demo_two.png', '/face_demo_three.png'];
+    return [];
   };
 
   // function untuk memformat waktu tap RFID ke format lokal
@@ -1178,6 +1173,12 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
                         <span className="text-xs font-semibold text-slate-400">Memuat foto wajah...</span>
+                      </div>
+                    ) : cardPhotos.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-center bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6">
+                        <ShieldAlert size={28} className="text-amber-500 mb-2" />
+                        <span className="text-xs font-bold text-slate-700">Belum Ada Foto Terdaftar</span>
+                        <p className="text-[10px] text-slate-400 mt-1 max-w-[180px]">Silakan lakukan pendaftaran wajah terlebih dahulu.</p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 gap-4 max-w-[240px]">
