@@ -235,9 +235,10 @@ Komponen paling kompleks dalam aplikasi. Menampilkan tabel kartu RFID yang mengg
 - Pencarian berdasarkan nama, UID, atau role
 - Drawer detail geser dari kanan saat kartu diklik
 - Form inline edit hak akses (role, jadwal, masa berlaku)
-- Form inline edit kredensial (nama, RFID UID)
+- Form inline edit kredensial dengan fitur *Swap User* (RFID statis terkunci, ganti pemegang lewat dropdown)
 - Preview 3 foto wajah biometrik dari API atau localStorage
-- Modal tambah kartu baru
+- Modal tambah kartu baru dengan opsi penetapan langsung ke user terdaftar tanpa kartu
+- Tombol aksi hapus kartu cepat pada kolom tabel (*delete card column*)
 - Fungsi blokir/buka blokir kartu (set `valid_until = 1970-01-01`)
 - Pembaruan status realtime berkala mengikuti interval polling live serta dilengkapi tombol putar ulang manual (*refresh button*)
 

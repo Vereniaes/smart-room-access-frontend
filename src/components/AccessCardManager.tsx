@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Search, ShieldCheck, ShieldAlert, CreditCard, User, Clock, Calendar, ArrowRight, X, Image as ImageIcon, Edit2, Key, Filter, ChevronDown, Plus, UserPlus, AlertCircle, ScanFace, RefreshCw } from 'lucide-react';
+import { Search, ShieldCheck, ShieldAlert, CreditCard, User, Clock, Calendar, ArrowRight, X, Image as ImageIcon, Edit2, Key, Filter, ChevronDown, Plus, UserPlus, AlertCircle, ScanFace, RefreshCw, Trash2 } from 'lucide-react';
 
 interface UserData {
   id: number;
@@ -72,6 +72,7 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
   const [isAddCardOpen, setIsAddCardOpen] = useState(false);
   const [newCardUid, setNewCardUid] = useState('');
   const [newCardValidUntil, setNewCardValidUntil] = useState('');
+  const [newCardUserId, setNewCardUserId] = useState<number | ''>('');
   const [addCardError, setAddCardError] = useState('');
   const [isAddingCard, setIsAddingCard] = useState(false);
 
@@ -176,9 +177,20 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
 
       const data = await res.json();
       if (data.success) {
+        if (newCardUserId !== '') {
+          await fetch(`${API_URL}/api/v1/users/${newCardUserId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ rfid_uid: newCardUid.trim() })
+          });
+        }
         setIsAddCardOpen(false);
         setNewCardUid('');
         setNewCardValidUntil('');
+        setNewCardUserId('');
         await fetchCards();
         onRefresh();
       } else {
@@ -192,6 +204,30 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
     }
   };
 
+  // function untuk menghapus kartu fisik dari database
+  const handleDeleteCard = async (cardId: number, cardName: string) => {
+    if (!window.confirm(`Hapus kartu fisik milik ${cardName}? Akun user tidak akan terhapus.`)) return;
+    try {
+      const res = await fetch(`${API_URL}/api/v1/cards/${cardId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (selectedCard?.id === cardId) setSelectedCard(null);
+        await fetchCards();
+        onRefresh();
+      } else {
+        alert(data.message || 'Gagal menghapus kartu');
+      }
+    } catch (err) {
+      console.error('Failed to delete card:', err);
+      alert('Gagal menghubungi server');
+    }
+  };
+
   // Filter log akses untuk kartu yang sedang terpilih
   const cardLogs = selectedCard
     ? logs.filter((log) => log.uid.trim().toUpperCase() === selectedCard.uid.trim().toUpperCase())
@@ -199,6 +235,7 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
 
   const [isEditingAccess, setIsEditingAccess] = useState(false);
   const [isEditingCredential, setIsEditingCredential] = useState(false);
+  const [editCredentialUserId, setEditCredentialUserId] = useState<number | ''>('');
 
   const [editName, setEditName] = useState('');
   const [editRole, setEditRole] = useState<'admin' | 'staff' | 'student' | 'guest'>('guest');
@@ -269,42 +306,53 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
   // function untuk mengedit kredensial kartu user
   // output: void
   const handleSaveCredential = async () => {
-    if (!selectedCard || !selectedCard.userId) return;
-    if (!editName.trim()) return setEditError('Nama tidak boleh kosong');
-    if (!editRfidUid.trim()) return setEditError('RFID UID tidak boleh kosong');
+    if (!selectedCard) return;
 
     setIsSaving(true);
     setEditError('');
 
     try {
-      const payload = {
-        name: editName,
-        rfid_uid: editRfidUid.trim()
-      };
-
-      const res = await fetch(`${API_URL}/api/v1/users/${selectedCard.userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setSelectedCard({
-          ...selectedCard,
-          name: editName,
-          uid: editRfidUid.trim().toUpperCase()
+      if (editCredentialUserId !== '') {
+        const res = await fetch(`${API_URL}/api/v1/users/${editCredentialUserId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ rfid_uid: selectedCard.uid })
         });
-        setIsEditingCredential(false);
-        onRefresh();
-        fetchCards();
-      } else {
-        setEditError(data.message || 'Gagal menyimpan perubahan');
+        const data = await res.json();
+        if (!data.success) {
+          setEditError(data.message || 'Gagal memindahkan kartu');
+          return;
+        }
+      } else if (selectedCard.userId) {
+        const res = await fetch(`${API_URL}/api/v1/users/${selectedCard.userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ rfid_uid: null })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          setEditError(data.message || 'Gagal melepas kartu');
+          return;
+        }
       }
+
+      const targetUser = users.find(u => u.id === editCredentialUserId);
+      setSelectedCard({
+        ...selectedCard,
+        name: targetUser ? targetUser.name : 'Tidak Dikenal',
+        role: targetUser ? targetUser.role : 'TAMU',
+        status: editCredentialUserId !== '' ? 'registered' : 'unregistered',
+        userId: editCredentialUserId !== '' ? editCredentialUserId : null
+      });
+      setIsEditingCredential(false);
+      onRefresh();
+      await fetchCards();
     } catch (err: any) {
       console.error('Save credential error:', err);
       setEditError('Gagal menghubungi server');
@@ -326,8 +374,7 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
 
   const startEditCredential = () => {
     if (!selectedCard) return;
-    setEditName(selectedCard.name);
-    setEditRfidUid(selectedCard.uid);
+    setEditCredentialUserId(selectedCard.userId || '');
     setEditError('');
     setIsEditingCredential(true);
     setIsEditingAccess(false);
@@ -655,12 +702,13 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
                 <th className="py-3.5 px-6">Jabatan / Role</th>
                 <th className="py-3.5 px-6">Jadwal Akses</th>
                 <th className="py-3.5 px-6 text-center">Status</th>
+                <th className="py-3.5 px-6 text-center">Hapus</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {sortedCards.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-16 text-center text-slate-400 text-sm">
+                  <td colSpan={6} className="py-16 text-center text-slate-400 text-sm">
                     Tidak ada kartu RFID yang ditemukan.
                   </td>
                 </tr>
@@ -755,6 +803,22 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
                             </>
                           )}
                         </button>
+                      </td>
+                      <td className="py-4 px-6 text-center">
+                        {isReg && card.id ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteCard(card.id!, card.name);
+                            }}
+                            className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-all hover:scale-105 cursor-pointer inline-flex items-center justify-center"
+                            title="Hapus Kartu Fisik"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        ) : (
+                          <span className="text-slate-300 font-bold">-</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -852,21 +916,32 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
                   
                   <div className="space-y-3 pt-2">
                     <div>
-                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wide block mb-1.5">Nama Pemegang Kartu</label>
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="w-full bg-white border border-slate-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                      />
+                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wide block mb-1.5">Pilih Pemegang Kartu (Swap User)</label>
+                      <select
+                        value={editCredentialUserId}
+                        onChange={(e) => setEditCredentialUserId(e.target.value ? Number(e.target.value) : '')}
+                        className="w-full bg-white border border-slate-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
+                      >
+                        <option value="">-- Tanpa Pemilik (Lepas Kartu) --</option>
+                        {selectedCard.userId && (
+                          <option value={selectedCard.userId}>
+                            {selectedCard.name} (Pemilik Saat Ini)
+                          </option>
+                        )}
+                        {users.filter(u => !u.rfid_uid && u.id !== selectedCard.userId).map(u => (
+                          <option key={u.id} value={u.id}>
+                            {u.name} ({u.role.toUpperCase()})
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
-                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wide block mb-1.5">RFID UID Kredensial</label>
+                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wide block mb-1.5">RFID UID Kredensial (Fixed)</label>
                       <input
                         type="text"
-                        value={editRfidUid}
-                        onChange={(e) => setEditRfidUid(e.target.value)}
-                        className="w-full bg-white border border-slate-100 rounded-xl px-3 py-2 font-mono text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                        value={selectedCard.uid}
+                        disabled
+                        className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 font-mono text-xs font-semibold text-slate-500 cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -1189,6 +1264,22 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
                   onChange={(e) => setNewCardValidUntil(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all cursor-pointer"
                 />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block mb-1.5">Tetapkan ke User Terdaftar (Opsional)</label>
+                <select
+                  value={newCardUserId}
+                  onChange={(e) => setNewCardUserId(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all cursor-pointer"
+                >
+                  <option value="">-- Tanpa Pemilik (Kartu Menganggur) --</option>
+                  {users.filter(u => !u.rfid_uid).map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} ({u.role.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {addCardError && (
