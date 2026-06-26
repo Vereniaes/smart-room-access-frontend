@@ -759,3 +759,4 @@ https://smart-room-access-backend-196827089960.asia-southeast2.run.app
 - **Foto wajah fallback** - jika endpoint `/face/photos/:userId` tidak dapat diakses, komponen jatuh ke localStorage, kemudian ke gambar demo statis
 - **Kartu unregistered** - kartu yang pernah tap namun belum terdaftar dimunculkan dengan cara menggabungkan data dari endpoint `/cards` dan log akses yang `user_id`-nya `null`
 - **Blokir kartu** - mekanisme blokir dilakukan dengan mengatur field `valid_until` ke tanggal `1970-01-01`, bukan menghapus record dari database
+- **Sinkronisasi Jadwal & Status** - endpoint `/cards` ikut mengembalikan data `user_schedule_start`, `user_schedule_end`, dan `user_valid_until` agar tabel pemantauan kartu selalu akurat mengikuti status pemblokiran maupun jadwal pengguna

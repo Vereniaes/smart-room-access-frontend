@@ -94,7 +94,9 @@ export default function AccessCardManager({ users, logs, token, onRegister, onRe
           role: c.user_role || 'TAMU',
           status: c.user_id ? 'registered' : 'unregistered',
           userId: c.user_id,
-          validUntil: c.valid_until
+          scheduleStart: c.user_schedule_start,
+          scheduleEnd: c.user_schedule_end,
+          validUntil: c.user_valid_until || c.valid_until
         }));
         setApiCards(mapped);
       }
